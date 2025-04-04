@@ -1,0 +1,99 @@
+#define sensorPin1 A0 // Sensor frente esquerdo
+#define sensorPin2 A1 // Sensor frente direito
+#define sensorPin3 A2 // Sensor traseiro esquerdo
+#define sensorPin4 A3 // Sensor traseiro direito
+
+const int threshold = 500; // Limiar para detectar branco
+
+const int PINO_ENA = 6;  // Pino para controle de velocidade do motor A
+const int PINO_ENB = 5;  // Pino para controle de velocidade do motor B
+const int PINO_IN1 = 4;  // Pino para controle da direção do motor A
+const int PINO_IN2 = 3;  // Pino para controle da direção do motor A
+const int PINO_IN3 = 8;  // Pino para controle da direção do motor B
+const int PINO_IN4 = 7;  // Pino para controle da direção do motor B
+
+void setup() {
+  pinMode(PINO_ENA, OUTPUT);
+  pinMode(PINO_ENB, OUTPUT);
+  pinMode(PINO_IN1, OUTPUT);
+  pinMode(PINO_IN2, OUTPUT);
+  pinMode(PINO_IN3, OUTPUT);
+  pinMode(PINO_IN4, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+  int leitura1 = analogRead(sensorPin1);
+  int leitura2 = analogRead(sensorPin2);
+  int leitura3 = analogRead(sensorPin3);
+  int leitura4 = analogRead(sensorPin4);
+
+  Serial.print("Sensores: ");
+  Serial.print(leitura1);
+  Serial.print(" | ");
+  Serial.print(leitura2);
+  Serial.print(" | ");
+  Serial.print(leitura3);
+  Serial.print(" | ");
+  Serial.println(leitura4);
+
+  // Verifica se algum sensor detectou a linha
+  if (leitura1 > threshold || leitura2 > threshold || leitura3 > threshold || leitura4 > threshold) {
+    // Decide a direção da correção
+    if (leitura1 > threshold || leitura2 > threshold) {
+      girar(30); // Gira um pouco para a direita (ajuste conforme necessário)
+    } else {
+      girar(-30); // Gira um pouco para a esquerda (ajuste conforme necessário)
+    }
+
+    // Move para frente até sair da linha
+    moverFrente();
+    while (leitura1 > threshold || leitura2 > threshold || leitura3 > threshold || leitura4 > threshold) {
+      leitura1 = analogRead(sensorPin1);
+      leitura2 = analogRead(sensorPin2);
+      leitura3 = analogRead(sensorPin3);
+      leitura4 = analogRead(sensorPin4);
+    }
+    parar(); // Para após sair da linha
+  } else {
+    moverFrente(); // Continua andando para frente se não detectar a linha
+  }
+  delay(100);
+}
+
+void girar(int graus) {
+  int tempoGiro = map(abs(graus), 0, 360, 0, 1000); // Mapeia o grau para tempo de giro
+  if (graus > 0) {
+    digitalWrite(PINO_IN1, HIGH);
+    digitalWrite(PINO_IN2, LOW);
+    digitalWrite(PINO_IN3, LOW);
+    digitalWrite(PINO_IN4, HIGH);
+  } else {
+    digitalWrite(PINO_IN1, LOW);
+    digitalWrite(PINO_IN2, HIGH);
+    digitalWrite(PINO_IN3, HIGH);
+    digitalWrite(PINO_IN4, LOW);
+  }
+  analogWrite(PINO_ENA, 255);
+  analogWrite(PINO_ENB, 255);
+  delay(tempoGiro);
+  parar();
+}
+
+void moverFrente() {
+  digitalWrite(PINO_IN1, LOW);
+  digitalWrite(PINO_IN2, HIGH);
+  digitalWrite(PINO_IN3, LOW);
+  digitalWrite(PINO_IN4, HIGH);
+  analogWrite(PINO_ENA, 255);
+  analogWrite(PINO_ENB, 255);
+}
+
+void parar() {
+  digitalWrite(PINO_IN1, LOW);
+  digitalWrite(PINO_IN2, LOW);
+  digitalWrite(PINO_IN3, LOW);
+  digitalWrite(PINO_IN4, LOW);
+  analogWrite(PINO_ENA, 0);
+  analogWrite(PINO_ENB, 0);
+}
